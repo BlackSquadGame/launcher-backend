@@ -1,0 +1,8 @@
+You can add up to 6 (maybe more) JPEG images named
+"banner_game_1.jpg"
+"banner_game_2.jpg"
+"banner_game_3.jpg"
+"banner_game_4.jpg"
+"banner_game_5.jpg"
+"banner_game_6.jpg"
+that will rotate in the game's main menu.

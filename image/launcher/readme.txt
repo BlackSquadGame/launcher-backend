@@ -1,0 +1,2 @@
+- Rename config.example.php to config.php
+- Change the ip in patch.bat to your backends external WAN ip

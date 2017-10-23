@@ -1,0 +1,263 @@
+<?php
+    
+    require_once('libraries/TeamSpeak3/TeamSpeak3.php');
+    require_once('libraries/SourceQuery/bootstrap.php');
+    use xPaw\SourceQuery\SourceQuery;
+    
+    $replacer = [
+        "ts3" => [
+            "%status%" => "virtualserver_status",
+            "%sid%" => "virtualserver_id",
+            "%sport%" => "virtualserver_port",
+            "%platform%" => "virtualserver_platform",
+            "%servername%" => "virtualserver_name",
+            "%serverversion%" => "virtualserver_version",
+            "%maxclients%" => "virtualserver_maxclients",
+            "%clientsonline%" => "virtualserver_clientsonline",
+            "%channelcount%" => "virtualserver_channelsonline",
+            "%packetloss%" => "virtualserver_total_packetloss_total",
+            "%ping%" => "virtualserver_total_ping"
+        ]
+    ];
+
+    $package = [
+        'general' => [
+            'static' => [
+                '%timeHi%', '%timeHis%', '%date%'
+            ]
+        ],
+        'ts3' => [
+            'static' => [
+                '%status%', '%sid%', '%sport%', '%platform%', '%servername%', '%serverversion%', '%packetloss_floored%', '%ping_floored%', 
+                '%packetloss_00%', '%maxclients%', '%clientsonline%', '%channelcount%', '%packetloss%', '%ping%', '%realclients%', '%nickname%'
+            ],
+            'regex' => [
+                "%groupcount\[([0-9,]{0,})\]%",
+            ],
+        ],
+    ];
+
+    function getIp() {
+        if (isset($_SERVER['HTTP_CLIENT_IP']))
+            return $_SERVER['HTTP_CLIENT_IP'];
+        else if(isset($_SERVER['HTTP_X_FORWARDED_FOR']))
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        else if(isset($_SERVER['HTTP_X_FORWARDED']))
+            return $_SERVER['HTTP_X_FORWARDED'];
+        else if(isset($_SERVER['HTTP_FORWARDED_FOR']))
+            return $_SERVER['HTTP_FORWARDED_FOR'];
+        else if(isset($_SERVER['HTTP_FORWARDED']))
+            return $_SERVER['HTTP_FORWARDED'];
+        else if(isset($_SERVER['REMOTE_ADDR']))
+            return $_SERVER['REMOTE_ADDR'];
+        else
+            return NULL;
+    }
+    
+    function paintText($image, $fontsize, $xpos, $ypos, $color, $fontfile, $text) {
+        $hex = str_replace("#", "", $color);
+        if(strlen($hex) == 3) {
+            $r = hexdec(substr($hex,0,1).substr($hex,0,1));
+            $g = hexdec(substr($hex,1,1).substr($hex,1,1));
+            $b = hexdec(substr($hex,2,1).substr($hex,2,1));
+        } else {
+            $r = hexdec(substr($hex,0,2));
+            $g = hexdec(substr($hex,2,2));
+            $b = hexdec(substr($hex,4,2));
+        }
+        imagettftext($image,$fontsize,0,$xpos,$ypos,imagecolorallocate($image, $r, $g, $b),$fontfile,$text);
+        return;
+    }
+    
+    function getImage() {
+        global $config;
+        $packetmanager = json_decode(file_get_contents('cache/packages.json'), 1);
+        $image = imagecreatefrompng('cache/cached_img');
+        if (in_array('ts3', $packetmanager['packages'])) {
+            require_once('cache/clients.php');
+            if (!empty($nicklist[getIp()])) {
+                $nickname = $nicklist[getIp()];
+                foreach ($config['textfield'] as $field) {
+                    if (strpos($field['text'], '%nickname%') !== FALSE) {
+                        paintText($image, $field['fontsize'], $field['xpos'], $field['ypos'], $field['color'], $field['fontfile'], str_replace('%nickname%', $nickname, $field['text'])); 
+                    }
+                }
+            }
+        }
+        return $image;
+    }
+    
+    try {
+        if (!function_exists('imagettftext')) {
+            throw new Exception ('PHP-GD not installed >> http://php.net/manual/en/book.image.php');
+        }
+        if (!is_writable('cache/')) {
+            throw new Exception ('No Write Permission for Folder \'cache/\' in Root Directory of Generator');
+        }
+        if (!file_exists('config.php' )) {
+            throw new Exception ('config.php does not exist');
+        } else {
+            require_once('config.php' ); 
+        }
+        if (!file_exists('cache/packages.json') || filemtime('cache/packages.json') < filemtime('config.php')) {
+            $packages = [];
+            if (count($config['sourcequery']) > 0 and $config['sqenable']) $packages[] = 'sq';
+            foreach ($config['textfield'] as $txt) {
+                foreach ($package as $key => $pkg) {
+                    if (array_key_exists('static', $pkg)) {
+                        foreach ($pkg['static'] as $static) {
+                            if (strpos($txt['text'], $static) !== false and !in_array($key, $packages)) $packages[] = $key;
+                        }
+                    }
+                    if (array_key_exists('regex', $pkg)) {
+                        foreach ($pkg['regex'] as $regex) {
+                            preg_match_all('/'.$regex.'/i', $txt['text'], $out);
+                            if (count($out[0]) > 0 and !in_array($key, $packages)) {
+                                $packages[] = $key;
+                            }
+                        }
+                    }
+                }
+            }
+            $packagefile = fopen('cache/packages.json', 'w+');
+            fwrite($packagefile, json_encode(['packages' => $packages],1));
+            fclose($packagefile);
+        }
+        
+        $packetmanager = json_decode(file_get_contents('cache/packages.json'), 1);
+        
+        if (
+            (
+                file_exists('cache/cached_img')
+                and filemtime('cache/cached_img') > (time() - $config['syncintervall'])
+                //and strpos('TeamSpeak3', $_SERVER['HTTP_USER_AGENT']) !== FALSE
+            ) || (
+                file_exists('cache/cache.lock')
+            )
+        ){
+            $i = 0;
+            while (file_exists('cache/cache.lock')) {
+                if ($i >= 10) throw new Exception ('Cache Lock exists... Please Remove the File \'cache.lock\' in Folder \'cache\' manually if it still exists after this Error!');
+                $i++;
+                sleep(1);
+            }
+			$page = $_SERVER['PHP_SELF'];
+			header("Refresh: 60; url=$page");
+            header('Content-Type: image/png');
+            imagepng(getImage());
+            die();
+        }
+        
+        fclose(fopen("cache/cache.lock", "w+"));
+        
+        if (!file_exists($config['backgroundimage'])) throw new Exception ('Error! Background Image not found! Check your config! Searched at '.$config['backgroundimage']);
+        $image = imagecreatefrompng($config['backgroundimage']);
+        
+        
+        if (in_array('ts3', $packetmanager['packages'])) {
+            try {
+                $ts3 = TeamSpeak3::factory(
+                    "serverquery://". $config['teamspeak']['loginname'] .":". $config['teamspeak']['loginpass'] 
+                    ."@". $config['teamspeak']['ip'] .":". $config['teamspeak']['queryport'] 
+                    ."/?server_port=". $config['teamspeak']['serverport'] 
+                    ."&nickname=Banner%20Generator"
+                );
+            } catch (Exception $e) {
+                if (!strpos('TeamSpeak3-ImageFetcher', $_SERVER['HTTP_USER_AGENT'])) throw $e;
+                $i = 0;
+                while (file_exists('cache/cache.lock')) {
+                    if ($i >= 10) throw new Exception ('Cache Lock exists... Please Remove the File \'cache.lock\' in Folder \'cache\' manually if it still exists after this Error!');
+                    $i++;
+                    sleep(1);
+                }
+				$page = $_SERVER['PHP_SELF'];
+				header("Refresh: 60; url=$page");
+                header('Content-Type: image/png');
+                imagepng(getImage());
+                die();
+            }
+            $groupcount = [];
+            $serverinfo = $ts3->getInfo();
+            $clients = $ts3->clientList(['client_type' => 0]);
+            foreach ($clients as $client) {
+                $ts3clients[htmlentities($client->connection_client_ip)] = htmlentities($client->client_nickname);
+            }
+            $clientcache = fopen('cache/clients.php', 'w+');
+            fwrite($clientcache, '<?php $nicklist = json_decode(\''.str_replace("'", "\'", json_encode($ts3clients, 1)).'\',1);');
+            fclose($clientcache);
+        }
+        if (in_array('sq', $packetmanager['packages'])) {
+            $sqinfo = [];
+            foreach ($config['sourcequery'] as $server => $conf) {
+                try {
+                    $sq = new SourceQuery();
+                    $sq->Connect($conf['ip'], $conf['port'], $conf['timeout'], SourceQuery::SOURCE);
+                    $y = 12;
+                    foreach ($sq->GetInfo() as $key => $value) {
+                        $sqinfo[$server][$key] = $value;
+                        if ($conf['debug']) {
+                            $color = imagecolorallocate($image, 255, 0, 0);
+                            imagettftext($image, 9, 0, 4, $y, $color, $config['sqlistfont'], 'Use "%sqinfo['.$server.']['.$key.']%" in Textfield to Display "'.$value.'"');
+                            $y = $y + 11;
+                        }
+                    }
+                    $sq->Disconnect();
+                } catch (Exception $e) {
+                    $color = imagecolorallocate($image, 255, 0, 0);
+                    imagettftext($image, 11, 0, 4, 15, $color, $config['sqlistfont'], 'SourceQuery Error on Server "'.$server.'":'.$e->getMessage()
+                    );
+                }
+            }
+        }
+
+        foreach ($config['textfield'] as $field) {
+            if (!file_exists($field['fontfile'])) throw new Exception ('Font File not found! Searched at '.$field['fontfile'].PHP_EOL.'You may need to set the absolute path (from root directory /var/www/...)');
+            if (strpos($field['text'], '%nickname%') !== FALSE) continue;
+            if (in_array('sq', $packetmanager['packages'])) {
+                $field['text'] = preg_replace_callback('/\%sqinfo\[(.*?)\]\[(.*?)\]\%/', function($matches) {
+                    global $sqinfo;
+                    return $sqinfo[$matches[1]][$matches[2]];
+                }, $field['text']);
+            }
+            if (in_array('ts3', $packetmanager['packages'])) {
+                foreach ($replacer['ts3'] as $k => $v) {
+                    $field['text'] = str_replace($k, $serverinfo[$v], $field['text']);
+                }
+                $field['text'] = preg_replace_callback('/\%groupcount\[([0-9,]{0,})\]\%/', function($match) {
+                    global $ts3;
+                    $count = 0;
+                    $groups = explode(',',$match[1]);
+                    foreach ($ts3->clientList(['client_type' => 0]) as $client) {
+                        foreach (explode(',',$client->client_servergroups) as $g) {
+                            if (in_array($g,$groups)) {
+                                $count++;
+                                break;
+                            }
+                        }
+                    }
+                    return $count;
+                }, $field['text']);
+                foreach ($groupcount as $k => $v) {
+                    $field['text'] = str_replace($k, $groupcount[$k], $field['text']);
+                }
+                $field['text'] = str_replace('%realclients%', $serverinfo['virtualserver_clientsonline']-$serverinfo['virtualserver_queryclientsonline'], $field['text']);
+                $field['text'] = str_replace('%ping_floored%', floor(htmlentities($serverinfo['virtualserver_total_ping'])), $field['text']);
+                $field['text'] = str_replace('%packetloss_00%', round(htmlentities($serverinfo['virtualserver_total_packetloss_total']), 2, PHP_ROUND_HALF_DOWN), $field['text']);
+                $field['text'] = str_replace('%packetloss_floored%', floor(htmlentities($serverinfo['virtualserver_total_packetloss_total'])), $field['text']);
+            }
+            $field['text'] = str_replace('%timeHi%', date("H:i"), $field['text']);
+            $field['text'] = str_replace('%timeHis%', date("H:i:s"), $field['text']);
+            $field['text'] = str_replace('%date%', date("d.m.Y"), $field['text']);
+            paintText($image, $field['fontsize'], $field['xpos'], $field['ypos'], $field['color'], $field['fontfile'], $field['text']);           
+        }
+        imagepng($image, 'cache/cached_img');
+        unlink('cache/cache.lock');
+        header('Content-Type: image/png');
+		$page = $_SERVER['PHP_SELF'];
+		header("Refresh: 60; url=$page");
+        imagepng(getImage());
+        imagedestroy($image);
+    } catch (Exception $e) {
+        echo $e->getMessage();
+        if (file_exists('cache/cache.lock')) unlink('cache/cache.lock');
+    }
