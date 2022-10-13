@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<WidgetLeft>
+	
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_5.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3551676518230992522" />
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_6.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3551676518231009250" />
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_7.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3303977270396840336" />
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_8.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3303977270396762556" />
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_9.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3291590469074688943" />
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_10.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3291590469053865582" />
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_11.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3291590469053917153" />
+	<node type="image" time="4000" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_12.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3334367690159744465" />
+
+</WidgetLeft>
+<WidgetRightUp>
+	<node type="image" time="-1" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_1.jpg" url="https://steamcommunity.com/games/550650/announcements/detail/3551676518230992522" />
+</WidgetRightUp>
+<WidgetRightDown>
+	<node type="image" time="-1" image="http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_2.jpg" url="https://vfun.valofe.com/customer/support?service_code=bsquad" />
+</WidgetRightDown>
