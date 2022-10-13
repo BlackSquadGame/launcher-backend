@@ -1,0 +1,52 @@
+/* SUMMARY REQUEST INFO */
+
+Request URL: http://stage.blacksquad.com/Redirect_Upload/WidgetData.xml
+Remote Address: 65.9.58.185:80
+Host: stage.blacksquad.com
+Process name: BSLauncher.exe
+Process ID: 4824
+Connection ID: 1000308
+Status: Bypassed
+Content type: Ajax
+Protocol type: Tcp
+Start time: 13:55:03.4220
+Time: 402 ms
+Size: ↑0 B ↓2.0 KB
+Request Method: GET
+Status code: 200 OK
+
+
+/* SUMMARY REQUEST INFO */
+
+Request URL: http://stage.blacksquad.com/launcher/serverstatus.json
+Remote Address: 65.9.58.32:80
+Host: stage.blacksquad.com
+Process name: BSLauncher.exe
+Process ID: 4824
+Connection ID: 1000587
+Status: Processed
+Content type: Ajax
+Protocol type: Tcp
+Start time: 13:59:50.0090
+Time: 402 ms
+Size: ↑0 B ↓616 B
+Request Method: GET
+Status code: 200 OK
+||stage.blacksquad.com/launcher/serverstatus.json^$replace=/false/true/i (User rules)
+
+/* SUMMARY REQUEST INFO */
+
+Request URL: http://stage.blacksquad.com/Redirect_Upload/Image/banner_game_12.jpg
+Remote Address: 65.9.58.185:80
+Host: stage.blacksquad.com
+Process name: BSLauncher.exe
+Process ID: 4824
+Connection ID: 1000310
+Status: Bypassed
+Content type: Image
+Protocol type: Tcp
+Start time: 13:55:06.1320
+Time: 110 ms
+Size: ↑0 B ↓517 B
+Request Method: GET
+Status code: 304 Not Modified
